@@ -1,0 +1,41 @@
+name: Deploy to VT-Oracle Nginx Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Fix Permissions on EC2 Before Deployment
+        run: |
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "sudo chown -R ${{ secrets.EC2_USER }}:${{ secrets.EC2_USER }} /var/www/vtone.in/html && sudo chmod -R 775 /var/www/vtone.in/html"
+
+      - name: Remove Existing Files on EC2
+        run: |
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "sudo rm -rf /var/www/vtone.in/html/*"
+
+      - name: Deploy Files to EC2
+        run: |
+          rsync -avz --delete . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/vtone.in/html
+
+      - name: Set Correct Permissions After Deployment
+        run: |
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "sudo chown -R www-data:www-data /var/www/vtone.in/html && sudo chmod -R 755 /var/www/vtone.in/html"
+
+      - name: Restart Nginx Server
+        run: |
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "sudo systemctl restart nginx"
