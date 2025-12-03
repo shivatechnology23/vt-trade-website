@@ -1,5 +1,5 @@
 /**
-* Template Name: KnightOne
+* Template Name: VT
 * Template URL: https://bootstrapmade.com/knight-simple-one-page-bootstrap-template/
 * Updated: Oct 16 2024 with Bootstrap v5.3.3
 * Author: BootstrapMade.com
